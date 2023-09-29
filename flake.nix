@@ -180,7 +180,7 @@
           apps.default =
             {
               type = "app";
-              program = "${packages.default}/${packages.default.name}";
+              program = "${packages.default}/${packages.default.pname}";
             };
           devShell = with pkgs; mkShell {
             inherit nativeBuildInputs;
