@@ -1,0 +1,42 @@
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    name: Test (native)
+    runs-on: ${{ matrix.platform.runs-on }}
+    strategy:
+      matrix:
+        platform:
+          - runs-on: ubuntu-latest
+            channel: linux
+          - runs-on: macos-latest
+            channel: mac
+          - runs-on: windows-latest
+            channel: windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+  docker:
+    needs:
+      - test
+    if: github.ref == 'refs/heads/main' && github.repository_owner == 'geng-engine'
+    name: Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build & Push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
