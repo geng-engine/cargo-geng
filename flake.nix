@@ -13,6 +13,7 @@
 
   outputs = { self, nixpkgs, rust-overlay, crane-flake, android, utils, nix-filter }:
     {
+      inherit (utils) eachDefaultSystem;
       makeFlakeSystemOutputs = system: { src, extraBuildInputs ? [ ], rust ? { }, ... }@config:
         let
           filter = nix-filter.lib;
