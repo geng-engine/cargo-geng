@@ -51,7 +51,7 @@
             waylandDeps ++
             xorgDeps ++
             [
-              kdialog # for tinyfiledialogs
+              # kdialog # for tinyfiledialogs
               openssl
               alsa-lib
               udev
@@ -93,12 +93,23 @@
                   pname = cleanedArgs.pname or crateName.pname;
                   version = cleanedArgs.version or crateName.version;
                   cargoVendorDir = cleanedArgs.cargoVendorDir or (crane.vendorCargoDeps cleanedArgs);
+                  CARGO_BUILD_TARGET = if target == "web" then "wasm32-unknown-unknown" else target;
+                  depsBuildBuild =
+                    if target == "x86_64-pc-windows-gnu" then
+                      with pkgs; [
+                        pkgsCross.mingwW64.windows.pthreads
+                        pkgsCross.mingwW64.stdenv.cc
+                      ]
+                    else [ ];
+                  CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER =
+                    if target == "x86_64-pc-windows-gnu" then
+                      "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
+                    else null;
                 };
               in
               crane.mkCargoDerivation (args // {
                 # pnameSuffix = "-trunk";
                 cargoArtifacts = args.cargoArtifacts or (crane.buildDepsOnly (args // {
-                  CARGO_BUILD_TARGET = args.CARGO_BUILD_TARGET or (if target == "web" then "wasm32-unknown-unknown" else target);
                   installCargoArtifactsMode = args.installCargoArtifactsMode or "use-zstd";
                   doCheck = args.doCheck or false;
                   inherit nativeBuildInputs;
@@ -176,6 +187,8 @@
           packages.default = lib.buildGengPackage { inherit src; };
           # Executed by `nix build .#web"
           packages.web = lib.buildGengPackage { inherit src; target = "web"; };
+          # Executed by `nix build .#windows"
+          packages.windows = lib.buildGengPackage { inherit src; target = "x86_64-pc-windows-gnu"; };
           # Executed by `nix run . -- <args?>`
           apps.default =
             {
