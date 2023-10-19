@@ -36,7 +36,7 @@ jobs:
       contents: read
       packages: write
     env:
-      REGISTRY: 
+      REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
     steps:
       - name: Checkout
