@@ -5,6 +5,10 @@ set -o pipefail; # Prevend pipelines masking errors
 set -u; # Error on usage of undefined variables
 set -x; # Print all commands as they are executed
 
+if [[ "$TARGETS" == "all" ]]; then
+    TARGETS="windows linux web armv7"
+fi
+
 function setup() {
     apt-get update
     function install() {
