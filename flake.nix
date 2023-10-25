@@ -148,7 +148,7 @@
               src = builtins.fetchGit {
                 url = "https://github.com/geng-engine/cargo-apk";
                 allRefs = true;
-                rev = "fc7f7fd19cdde19119136e7e726c85d101ca37db";
+                rev = "3d64d642fc4adf68b8a828cc1c743303a360ae1d";
               };
               cargoExtraArgs = "--package cargo-apk";
               cargoVendorDir = crane.vendorCargoDeps {
