@@ -24,7 +24,7 @@ fs_extra = "1"
 cargo_metadata = "0.18"
 futures = "0.3"
 clap = { version = "4", features = ["derive"] }
-anyhow = "1"
+anyhow = { version = "1", features = ["backtrace"] }
 wasm-bindgen-cli-support = "0.2"
 wasm-opt = { version = "0.114", optional = true }
 serde = "1"

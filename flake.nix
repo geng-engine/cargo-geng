@@ -93,7 +93,10 @@
                   pname = cleanedArgs.pname or crateName.pname;
                   version = cleanedArgs.version or crateName.version;
                   cargoVendorDir = cleanedArgs.cargoVendorDir or (crane.vendorCargoDeps cleanedArgs);
-                  CARGO_BUILD_TARGET = if target == "web" then "wasm32-unknown-unknown" else target;
+                  CARGO_BUILD_TARGET =
+                    if target == "web" then "wasm32-unknown-unknown"
+                    else if target == "android" then "aarch64-linux-android"
+                    else target;
                   depsBuildBuild =
                     if target == "x86_64-pc-windows-gnu" then
                       with pkgs; [
@@ -189,6 +192,8 @@
           packages.web = lib.buildGengPackage { inherit src; target = "web"; };
           # Executed by `nix build .#windows"
           packages.windows = lib.buildGengPackage { inherit src; target = "x86_64-pc-windows-gnu"; };
+          # Executed by `nix build .#android"
+          packages.android = lib.buildGengPackage { inherit src; target = "android"; };
           # Executed by `nix run . -- <args?>`
           apps.default =
             {

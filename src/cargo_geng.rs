@@ -1,5 +1,7 @@
 use std::process::Command;
 
+use anyhow::Context;
+
 fn exec<C: std::borrow::BorrowMut<Command>>(mut cmd: C) -> Result<(), anyhow::Error> {
     if cmd.borrow_mut().status()?.success() {
         Ok(())
@@ -91,6 +93,8 @@ struct Opt {
     #[clap(long)]
     web: bool,
     #[clap(long)]
+    android: bool,
+    #[clap(long)]
     release: bool,
     #[clap(long)]
     all_features: bool,
@@ -179,15 +183,7 @@ pub fn run() -> anyhow::Result<()> {
                     }
                 })
                 .unwrap();
-            exec(Command::new("cargo").arg("build").args(opt.all_args()))?;
-            let out_dir = opt
-                .out_dir
-                .clone()
-                .unwrap_or(metadata.target_directory.join("geng").into());
-            if out_dir.exists() {
-                std::fs::remove_dir_all(&out_dir)?;
-            }
-            std::fs::create_dir_all(&out_dir)?;
+
             let assets: Vec<std::path::PathBuf> = {
                 fn package_assets(
                     package: &cargo_metadata::Package,
@@ -227,69 +223,111 @@ pub fn run() -> anyhow::Result<()> {
                 }
                 package_assets(package, opt.example.as_deref())
             };
-            fs_extra::copy_items(&assets, &out_dir, &{
-                let mut options = fs_extra::dir::CopyOptions::new();
-                options.copy_inside = true;
-                options
-            })?;
 
-            let mut command = Command::new("cargo")
-                .arg("build")
-                .args(opt.all_args())
-                .arg("--message-format=json")
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::null())
-                .spawn()?;
-            let reader = std::io::BufReader::new(command.stdout.take().unwrap());
-            let mut executable = None;
-            for message in cargo_metadata::Message::parse_stream(reader) {
-                if let cargo_metadata::Message::CompilerArtifact(cargo_metadata::Artifact {
-                    executable: Some(path),
-                    ..
-                }) = message.unwrap()
-                {
-                    if executable.is_some() {
-                        anyhow::bail!("Found several executable files");
-                    }
-                    executable = Some(path);
-                }
+            let out_dir = opt
+                .out_dir
+                .clone()
+                .unwrap_or(metadata.target_directory.join("geng").into());
+            if out_dir.exists() {
+                std::fs::remove_dir_all(&out_dir)?;
             }
-            command.wait()?;
-            let executable = executable.ok_or_else(|| anyhow::anyhow!("executable not found"))?;
+            std::fs::create_dir_all(&out_dir)?;
 
-            if executable.extension() == Some("wasm") {
-                let stem = executable.file_stem().unwrap();
-                let mut wasm_bindgen = wasm_bindgen_cli_support::Bindgen::new();
-                wasm_bindgen
-                    .input_path(&executable)
-                    .web(true)?
-                    .typescript(false)
-                    .generate_output()?
-                    .emit(&out_dir)?;
-                let wasm_bg_path = out_dir.join(format!("{stem}_bg.wasm"));
-                let wasm_path = out_dir.join(format!("{stem}.wasm"));
-                if opt.release && cfg!(feature = "wasm-opt") {
-                    #[cfg(feature = "wasm-opt")]
-                    wasm_opt::OptimizationOptions::new_optimize_for_size_aggressively()
-                        .run(&wasm_bg_path, wasm_path)?;
-                } else {
-                    std::fs::copy(&wasm_bg_path, wasm_path)?;
+            if opt.android {
+                let assets_dir = metadata.target_directory.join("android-assets");
+                if assets_dir.exists() {
+                    std::fs::remove_dir_all(&assets_dir)?;
                 }
-                std::fs::remove_file(&wasm_bg_path)?;
-                std::fs::write(
-                    out_dir.join(opt.index_file.as_deref().unwrap_or("index.html")),
-                    include_str!("index.html").replace("<app-name>", stem),
+                std::fs::create_dir_all(&assets_dir)?;
+                fs_extra::copy_items(&assets, &assets_dir, &{
+                    let mut options = fs_extra::dir::CopyOptions::new();
+                    options.copy_inside = true;
+                    options
+                })
+                .context("Failed to copy assets")?;
+                exec(
+                    Command::new("cargo")
+                        .arg("apk")
+                        .arg("build")
+                        .arg("--assets")
+                        .arg(&assets_dir)
+                        .args(opt.args_without_target()),
                 )?;
-                if opt.sub == Sub::Run || opt.sub == Sub::Serve {
-                    serve(&out_dir, opt.serve_port, opt.sub == Sub::Run);
-                }
+                let apk_filename = format!("{}.apk", package.name);
+                let apk_path = metadata
+                    .target_directory
+                    .join(if opt.release { "release" } else { "debug" })
+                    .join("apk")
+                    .join(&apk_filename);
+                std::fs::copy(apk_path, out_dir.join(&apk_filename))
+                    .context(format!("Failed to copy {apk_filename:?}"))?;
             } else {
-                std::fs::copy(&executable, out_dir.join(executable.file_name().unwrap()))?;
-                if opt.sub == Sub::Run {
-                    exec(Command::new(&executable).args(opt.passthrough_args).env(
-                        "CARGO_MANIFEST_DIR",
-                        package.manifest_path.parent().unwrap(),
-                    ))?;
+                exec(Command::new("cargo").arg("build").args(opt.all_args()))?;
+                fs_extra::copy_items(&assets, &out_dir, &{
+                    let mut options = fs_extra::dir::CopyOptions::new();
+                    options.copy_inside = true;
+                    options
+                })?;
+
+                let mut command = Command::new("cargo")
+                    .arg("build")
+                    .args(opt.all_args())
+                    .arg("--message-format=json")
+                    .stdout(std::process::Stdio::piped())
+                    .stderr(std::process::Stdio::null())
+                    .spawn()?;
+                let reader = std::io::BufReader::new(command.stdout.take().unwrap());
+                let mut executable = None;
+                for message in cargo_metadata::Message::parse_stream(reader) {
+                    if let cargo_metadata::Message::CompilerArtifact(cargo_metadata::Artifact {
+                        executable: Some(path),
+                        ..
+                    }) = message.unwrap()
+                    {
+                        if executable.is_some() {
+                            anyhow::bail!("Found several executable files");
+                        }
+                        executable = Some(path);
+                    }
+                }
+                command.wait()?;
+                let executable =
+                    executable.ok_or_else(|| anyhow::anyhow!("executable not found"))?;
+
+                if executable.extension() == Some("wasm") {
+                    let stem = executable.file_stem().unwrap();
+                    let mut wasm_bindgen = wasm_bindgen_cli_support::Bindgen::new();
+                    wasm_bindgen
+                        .input_path(&executable)
+                        .web(true)?
+                        .typescript(false)
+                        .generate_output()?
+                        .emit(&out_dir)?;
+                    let wasm_bg_path = out_dir.join(format!("{stem}_bg.wasm"));
+                    let wasm_path = out_dir.join(format!("{stem}.wasm"));
+                    if opt.release && cfg!(feature = "wasm-opt") {
+                        #[cfg(feature = "wasm-opt")]
+                        wasm_opt::OptimizationOptions::new_optimize_for_size_aggressively()
+                            .run(&wasm_bg_path, wasm_path)?;
+                    } else {
+                        std::fs::copy(&wasm_bg_path, wasm_path)?;
+                    }
+                    std::fs::remove_file(&wasm_bg_path)?;
+                    std::fs::write(
+                        out_dir.join(opt.index_file.as_deref().unwrap_or("index.html")),
+                        include_str!("index.html").replace("<app-name>", stem),
+                    )?;
+                    if opt.sub == Sub::Run || opt.sub == Sub::Serve {
+                        serve(&out_dir, opt.serve_port, opt.sub == Sub::Run);
+                    }
+                } else {
+                    std::fs::copy(&executable, out_dir.join(executable.file_name().unwrap()))?;
+                    if opt.sub == Sub::Run {
+                        exec(Command::new(&executable).args(opt.passthrough_args).env(
+                            "CARGO_MANIFEST_DIR",
+                            package.manifest_path.parent().unwrap(),
+                        ))?;
+                    }
                 }
             }
         }
