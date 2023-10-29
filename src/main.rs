@@ -1,3 +1,6 @@
+mod wasm_bindgen;
+mod wasm_opt;
+
 use std::process::Command;
 
 use anyhow::Context;
@@ -296,23 +299,14 @@ pub fn main() -> anyhow::Result<()> {
 
                 if executable.extension() == Some("wasm") {
                     let stem = executable.file_stem().unwrap();
-                    let mut wasm_bindgen = wasm_bindgen_cli_support::Bindgen::new();
-                    wasm_bindgen
-                        .input_path(&executable)
-                        .web(true)?
-                        .typescript(false)
-                        .generate_output()?
-                        .emit(&out_dir)?;
+                    wasm_bindgen::run(&executable, &out_dir)?;
                     let wasm_bg_path = out_dir.join(format!("{stem}_bg.wasm"));
                     let wasm_path = out_dir.join(format!("{stem}.wasm"));
-                    if opt.release && cfg!(feature = "wasm-opt") {
-                        #[cfg(feature = "wasm-opt")]
-                        wasm_opt::OptimizationOptions::new_optimize_for_size_aggressively()
-                            .run(&wasm_bg_path, wasm_path)?;
+                    if opt.release {
+                        wasm_opt::run(wasm_bg_path, wasm_path)?;
                     } else {
-                        std::fs::copy(&wasm_bg_path, wasm_path)?;
+                        std::fs::rename(wasm_bg_path, wasm_path)?;
                     }
-                    std::fs::remove_file(&wasm_bg_path)?;
                     std::fs::write(
                         out_dir.join(opt.index_file.as_deref().unwrap_or("index.html")),
                         include_str!("index.html").replace("<app-name>", stem),
