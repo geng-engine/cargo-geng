@@ -112,38 +112,36 @@ struct Opt {
     passthrough_args: Vec<String>,
 }
 
-fn to_arg(arg: &Option<String>, name: &str) -> impl Iterator<Item = String> {
-    if let Some(arg) = arg {
-        vec![name.to_owned(), arg.to_owned()]
-    } else {
-        vec![]
-    }
-    .into_iter()
+fn maybe_arg(arg: &str, value: Option<impl AsRef<str>>) -> impl Iterator<Item = String> {
+    value
+        .map(|value| [arg.to_owned(), value.as_ref().to_owned()])
+        .into_iter()
+        .flatten()
+}
+
+fn maybe_flag(flag: &str, enable: bool) -> Option<String> {
+    enable.then(|| flag.to_owned())
 }
 
 impl Opt {
     fn args_for_metadata(&self) -> impl Iterator<Item = String> {
         std::iter::empty()
     }
-    fn args_without_target(&self) -> impl Iterator<Item = String> {
-        self.args_for_metadata()
-            .chain(to_arg(&self.package, "--package"))
-            .chain(if self.release {
-                Some("--release".to_owned())
-            } else {
-                None
-            })
-            .chain(to_arg(&self.example, "--example"))
-            .chain(if self.all_features {
-                Some("--all-features".to_owned())
-            } else {
-                None
-            })
-            .chain(self.jobs.map(|jobs| format!("--jobs={jobs}")))
+    fn args_without_target(&self) -> impl Iterator<Item = String> + '_ {
+        itertools::chain![
+            self.args_for_metadata(),
+            maybe_arg("--package", self.package.as_ref()),
+            maybe_flag("--release", self.release),
+            maybe_arg("--example", self.example.as_ref()),
+            maybe_flag("--all-features", self.all_features),
+            self.jobs.map(|jobs| format!("--jobs={jobs}")),
+        ]
     }
-    fn all_args(&self) -> impl Iterator<Item = String> {
-        self.args_without_target()
-            .chain(to_arg(&self.target, "--target"))
+    fn all_args(&self) -> impl Iterator<Item = String> + '_ {
+        itertools::chain![
+            self.args_without_target(),
+            maybe_arg("--target", self.target.as_ref()),
+        ]
     }
 }
 
