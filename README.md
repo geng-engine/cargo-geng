@@ -12,6 +12,6 @@ cargo install --git https://github.com/geng-engine/cargo-geng
 
 ```sh
 cargo geng build --release # will package executable & assets in `target/geng` folder
-cargo geng build --release --web # package web build instead of current target
-cargo geng serve --web # build web package and serve it
+cargo geng build --release --platform web # package web build instead of current target
+cargo geng serve --platform web # build web package and serve it
 ```

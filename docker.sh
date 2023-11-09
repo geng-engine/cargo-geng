@@ -6,7 +6,7 @@ set -u; # Error on usage of undefined variables
 set -x; # Print all commands as they are executed
 
 if [[ "$TARGETS" == "all" ]]; then
-    TARGETS="windows linux web armv7"
+    TARGETS="windows linux web armv7 android"
 fi
 
 function setup() {
@@ -32,6 +32,10 @@ function setup() {
         install mingw-w64
         rustup target add x86_64-pc-windows-gnu
         printf "[target.x86_64-pc-windows-gnu]\nlinker = \"x86_64-w64-mingw32-gcc\"\n" >> $CARGO_HOME/config
+        ;;
+    android)
+        rustup target add aarch64-linux-android
+        cargo install --git https://github.com/geng-engine/cargo-apk --branch dev
         ;;
     armv7)
         install gcc-arm-linux-gnueabihf
