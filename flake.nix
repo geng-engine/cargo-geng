@@ -76,14 +76,14 @@
               };
             };
             buildGengPackage =
-              { target ? null
+              { platform ? null
               , ...
               }@origArgs:
               let
                 cleanedArgs = builtins.removeAttrs origArgs [
                   "installPhase"
                   "installPhaseCommand"
-                  "target"
+                  "platform"
                 ];
 
                 crateName = crane.crateNameFromCargoToml cleanedArgs;
@@ -94,18 +94,20 @@
                   version = cleanedArgs.version or crateName.version;
                   cargoVendorDir = cleanedArgs.cargoVendorDir or (crane.vendorCargoDeps cleanedArgs);
                   CARGO_BUILD_TARGET =
-                    if target == "web" then "wasm32-unknown-unknown"
-                    else if target == "android" then "aarch64-linux-android"
-                    else target;
+                    if platform == "web" then "wasm32-unknown-unknown"
+                    else if platform == "android" then "aarch64-linux-android"
+                    else if platform == "windows" then "x86_64-pc-windows-gnu"
+                    else if builtins.isNull platform then null
+                    else throw "unknown platform ${platform}";
                   depsBuildBuild =
-                    if target == "x86_64-pc-windows-gnu" then
+                    if platform == "windows" then
                       with pkgs; [
                         pkgsCross.mingwW64.windows.pthreads
                         pkgsCross.mingwW64.stdenv.cc
                       ]
                     else [ ];
                   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER =
-                    if target == "x86_64-pc-windows-gnu" then
+                    if platform == "windows" then
                       "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
                     else null;
                 };
@@ -121,7 +123,7 @@
 
                 buildPhaseCargoCommand = args.buildPhaseCommand or (
                   let
-                    args = if builtins.isNull target then "" else "--" + target;
+                    args = if builtins.isNull platform then "" else "--platform " + platform;
                   in
                   ''
                     local args="${args}"
