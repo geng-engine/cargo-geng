@@ -191,11 +191,11 @@
           # Executed by `nix build .`
           packages.default = lib.buildGengPackage { inherit src; };
           # Executed by `nix build .#web"
-          packages.web = lib.buildGengPackage { inherit src; target = "web"; };
+          packages.web = lib.buildGengPackage { inherit src; platform = "web"; };
           # Executed by `nix build .#windows"
-          packages.windows = lib.buildGengPackage { inherit src; target = "x86_64-pc-windows-gnu"; };
+          packages.windows = lib.buildGengPackage { inherit src; platform = "windows"; };
           # Executed by `nix build .#android"
-          packages.android = lib.buildGengPackage { inherit src; target = "android"; };
+          packages.android = lib.buildGengPackage { inherit src; platform = "android"; };
           # Executed by `nix run . -- <args?>`
           apps.default =
             {
