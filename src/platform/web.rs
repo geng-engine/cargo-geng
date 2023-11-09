@@ -6,6 +6,7 @@ use std::io::Error as IoError;
 use std::path::Path;
 
 #[derive(clap::Args)]
+#[group(id = "WebArgs")]
 pub struct Args {
     #[clap(long, default_value = "8000")]
     pub serve_port: u16,
