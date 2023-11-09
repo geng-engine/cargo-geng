@@ -1,6 +1,6 @@
 pub mod web;
 
-#[derive(PartialEq, Eq, Clone, Copy, strum::EnumString, strum::Display)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, strum::EnumString, strum::Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum Platform {
     Linux,

@@ -207,6 +207,9 @@ pub fn main() -> anyhow::Result<()> {
 
     match platform {
         Platform::Linux | Platform::Windows | Platform::Mac => {
+            if args.sub == Sub::Serve {
+                panic!("no serving for platform {platform:?}");
+            }
             if args.sub == Sub::Run {
                 exec(Command::new(executable).args(args.passthrough_args).env(
                     "CARGO_MANIFEST_DIR",
@@ -219,7 +222,14 @@ pub fn main() -> anyhow::Result<()> {
                 platform::web::serve(&out_dir, args.web.serve_port, args.sub == Sub::Run);
             }
         }
-        Platform::Android => todo!(),
+        Platform::Android => {
+            if args.sub == Sub::Serve {
+                panic!("no serving for platform {platform:?}");
+            }
+            if args.sub == Sub::Run {
+                todo!("Running android not yet implemented");
+            }
+        }
     }
 
     Ok(())
