@@ -205,6 +205,7 @@
           devShell = with pkgs; mkShell {
             inherit nativeBuildInputs;
             buildInputs = buildInputs ++ [
+              just
               rust-toolchain
               rust-analyzer
               # wineWowPackages.waylandFull
