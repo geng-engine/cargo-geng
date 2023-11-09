@@ -5,8 +5,8 @@ set -o pipefail; # Prevend pipelines masking errors
 set -u; # Error on usage of undefined variables
 set -x; # Print all commands as they are executed
 
-if [[ "$TARGETS" == "all" ]]; then
-    TARGETS="windows linux web armv7 android"
+if [[ "$PLATFORMS" == "all" ]]; then
+    PLATFORMS="windows linux web armv7 android"
 fi
 
 function setup() {
@@ -21,7 +21,7 @@ function setup() {
 
     curl https://sh.rustup.rs -sSf | sh -s - -y --no-modify-path --profile minimal
 
-    for target in ${TARGETS:-} linux; do
+    for target in ${PLATFORMS:-} linux; do
     case $target in
     linux)
         install libasound2-dev
@@ -58,34 +58,9 @@ function setup() {
 }
 
 function run_tests() {
-    cargo build \
-        --workspace \
-        --all-targets
-    for target in ${TARGETS:-}; do
-    case $target in
-    windows)
-        cargo build \
-            --workspace \
-            --all-targets \
-            --target x86_64-pc-windows-gnu
-        ;;
-    armv7)
-        cargo build \
-            --workspace \
-            --all-targets \
-            --target armv7-unknown-linux-gnueabihf
-        ;;
-    web)
-        cargo build \
-            --workspace \
-            --all-targets \
-            --target wasm32-unknown-unknown
-        ;;
-    *)
-        echo "$target is not supported"
-        exit 1
-        ;;
-    esac
+    for platform in ${PLATFORMS:-}; do
+        # TODO
+        cargo geng build --platform $platform
     done
 }
 

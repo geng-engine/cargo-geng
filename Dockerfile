@@ -4,7 +4,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 COPY docker.sh /
-ARG TARGETS
+ARG PLATFORMS
 RUN ["/bin/bash", "/docker.sh", "setup"]
 
 FROM base AS intermediate
