@@ -20,6 +20,9 @@ impl Args {
             maybe_flag("--release", self.release),
             maybe_arg("--example", self.example.as_ref()),
             maybe_flag("--all-features", self.all_features),
+            self.features
+                .iter()
+                .flat_map(|feature| ["--features".to_owned(), feature.to_owned()]),
             self.jobs.map(|jobs| format!("--jobs={jobs}")),
         ]
     }
