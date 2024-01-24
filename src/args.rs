@@ -22,6 +22,8 @@ pub struct Args {
     #[clap(long)]
     pub all_features: bool,
     #[clap(long)]
+    pub no_default_features: bool,
+    #[clap(long)]
     pub example: Option<String>,
     #[clap(long, short = 'j')]
     pub jobs: Option<usize>,
