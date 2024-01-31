@@ -200,6 +200,7 @@ pub fn main() -> anyhow::Result<()> {
                     &index_file_path,
                     include_str!("index.html").replace("<app-name>", stem),
                 )?;
+                std::fs::write(out_dir.join("sound-fix.js"), include_str!("sound-fix.js"))?;
                 index_file_path
             } else {
                 let final_executable_path = out_dir.join(executable.file_name().unwrap());
