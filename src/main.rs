@@ -94,7 +94,7 @@ pub fn main() -> anyhow::Result<()> {
                     }),
             }) = serde_json::from_value::<Metadata>(package.metadata.clone())
             {
-                result.extend(assets);
+                result.extend(assets.into_iter().map(|path| root_dir.join(path)));
             } else {
                 let assets_dir = root_dir.join("assets");
                 if assets_dir.is_dir() {
