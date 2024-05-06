@@ -27,7 +27,8 @@
             };
           };
           rust-version = ({ version = "latest"; } // rust).version;
-          rust-toolchain = pkgs.rust-bin.stable.${rust-version}.default.override
+          rust-toolchain-kind = ({ toolchain-kind = "stable"; } // rust).toolchain-kind;
+          rust-toolchain = pkgs.rust-bin.${rust-toolchain-kind}.${rust-version}.default.override
             {
               extensions = [ "rust-src" ];
               targets = [
