@@ -26,8 +26,11 @@
               android_sdk.accept_license = true;
             };
           };
-          rust-version = ({ version = "latest"; } // rust).version;
-          rust-toolchain = pkgs.rust-bin.stable.${rust-version}.default.override
+          rust-properties = ({
+            version = "latest";
+            toolchain-kind = "stable";
+          } // rust);
+          rust-toolchain = pkgs.rust-bin.${rust-properties.toolchain-kind}.${rust-properties.version}.default.override
             {
               extensions = [ "rust-src" ];
               targets = [
