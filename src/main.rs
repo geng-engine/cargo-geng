@@ -137,7 +137,7 @@ pub fn main() -> anyhow::Result<()> {
             exec(
                 Command::new("cargo")
                     .arg("apk")
-                    .arg("build")
+                    .arg(if args.sub == Sub::Run { "run" } else { "build" })
                     .arg("--assets")
                     .arg(&assets_dir)
                     .args(args.args_without_target()),
@@ -233,7 +233,8 @@ pub fn main() -> anyhow::Result<()> {
                 panic!("no serving for platform {platform:?}");
             }
             if args.sub == Sub::Run {
-                todo!("Running android not yet implemented");
+                // TODO currently running happens while building :)
+                // todo!("Running android not yet implemented");
             }
         }
     }
