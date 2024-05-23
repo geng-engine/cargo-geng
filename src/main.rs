@@ -18,6 +18,7 @@ impl Args {
         itertools::chain![
             maybe_arg("--package", self.package.as_ref()),
             maybe_flag("--release", self.release),
+            maybe_arg("--profile", self.profile.as_ref()),
             maybe_arg("--example", self.example.as_ref()),
             maybe_flag("--all-features", self.all_features),
             maybe_flag("--no-default-features", self.no_default_features),

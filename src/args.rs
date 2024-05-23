@@ -18,6 +18,8 @@ pub struct Args {
     #[clap(long)]
     pub release: bool,
     #[clap(long)]
+    pub profile: Option<String>,
+    #[clap(long)]
     pub features: Vec<String>,
     #[clap(long)]
     pub all_features: bool,
