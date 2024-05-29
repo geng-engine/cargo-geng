@@ -1,4 +1,5 @@
 /.direnv/
+/.devenv/
 /target/
 .idea/
 *.iml
