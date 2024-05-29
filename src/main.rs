@@ -45,6 +45,26 @@ impl Args {
     }
 }
 
+#[derive(serde::Deserialize)]
+struct GengMetadata {
+    assets: Option<Vec<PathBuf>>,
+}
+#[derive(serde::Deserialize)]
+struct AndroidMetadata {
+    apk_name: Option<String>,
+}
+#[derive(serde::Deserialize)]
+struct Metadata {
+    geng: Option<GengMetadata>,
+    android: Option<AndroidMetadata>,
+}
+
+fn package_metadata(package: &cargo_metadata::Package) -> anyhow::Result<Metadata> {
+    Ok(serde_json::from_value::<Metadata>(
+        package.metadata.clone(),
+    )?)
+}
+
 pub fn main() -> anyhow::Result<()> {
     let args = args::parse();
     let metadata = cargo_metadata::MetadataCommand::new().exec()?;
@@ -80,23 +100,11 @@ pub fn main() -> anyhow::Result<()> {
                 root_dir = root_dir.join("examples").join(example);
             }
             let mut result = Vec::new();
-            #[derive(serde::Deserialize)]
-            struct GengMetadata {
-                assets: Option<Vec<PathBuf>>,
-            }
-            #[derive(serde::Deserialize)]
-            struct Metadata {
-                geng: Option<GengMetadata>,
-            }
-            if let Ok(Metadata {
-                geng:
-                    Some(GengMetadata {
-                        assets: Some(assets),
-                    }),
-            }) = serde_json::from_value::<Metadata>(package.metadata.clone())
-            {
+            let metadata = package_metadata(package).unwrap();
+            if let Some(assets) = metadata.geng.and_then(|geng| geng.assets) {
                 result.extend(assets.into_iter().map(|path| root_dir.join(path)));
             } else {
+                // default assets paths
                 let assets_dir = root_dir.join("assets");
                 if assets_dir.is_dir() {
                     result.push(assets_dir);
@@ -142,7 +150,12 @@ pub fn main() -> anyhow::Result<()> {
                     .arg(&assets_dir)
                     .args(args.args_without_target()),
             )?;
-            let apk_filename = format!("{}.apk", package.name);
+            let apk_name = package_metadata(package)
+                .unwrap()
+                .android
+                .and_then(|android| android.apk_name)
+                .unwrap_or(package.name.clone());
+            let apk_filename = format!("{apk_name}.apk");
             let apk_path = metadata
                 .target_directory
                 .join(if args.release { "release" } else { "debug" })
