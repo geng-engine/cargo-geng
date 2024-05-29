@@ -170,7 +170,13 @@ pub fn main() -> anyhow::Result<()> {
             let apk_filename = format!("{apk_name}.apk");
             let apk_path = metadata
                 .target_directory
-                .join(if args.release { "release" } else { "debug" })
+                .join(if let Some(profile) = &args.profile {
+                    profile
+                } else if args.release {
+                    "release"
+                } else {
+                    "debug"
+                })
                 .join("apk")
                 .join(&apk_filename);
             let final_apk_path = out_dir.join(&apk_filename);
