@@ -59,8 +59,8 @@ struct Metadata {
     android: Option<AndroidMetadata>,
 }
 
-fn package_metadata(package: &cargo_metadata::Package) -> anyhow::Result<Metadata> {
-    Ok(serde_json::from_value::<Metadata>(
+fn package_metadata(package: &cargo_metadata::Package) -> anyhow::Result<Option<Metadata>> {
+    Ok(serde_json::from_value::<Option<Metadata>>(
         package.metadata.clone(),
     )?)
 }
@@ -101,7 +101,10 @@ pub fn main() -> anyhow::Result<()> {
             }
             let mut result = Vec::new();
             let metadata = package_metadata(package).unwrap();
-            if let Some(assets) = metadata.geng.and_then(|geng| geng.assets) {
+            if let Some(assets) = metadata
+                .and_then(|meta| meta.geng)
+                .and_then(|geng| geng.assets)
+            {
                 result.extend(assets.into_iter().map(|path| root_dir.join(path)));
             } else {
                 // default assets paths
@@ -161,7 +164,7 @@ pub fn main() -> anyhow::Result<()> {
             )?;
             let apk_name = package_metadata(package)
                 .unwrap()
-                .android
+                .and_then(|meta| meta.android)
                 .and_then(|android| android.apk_name)
                 .unwrap_or(package.name.clone());
             let apk_filename = format!("{apk_name}.apk");
