@@ -112,7 +112,16 @@ pub fn main() -> anyhow::Result<()> {
             }
             result
         }
-        package_assets(package, args.example.as_deref())
+        let mut paths = Vec::new();
+        for dep in &metadata.packages {
+            if package.name == dep.name {
+                if let Some(example) = &args.example {
+                    paths.extend(package_assets(dep, Some(example)));
+                }
+            }
+            paths.extend(package_assets(dep, None));
+        }
+        paths
     };
 
     let out_dir = args
