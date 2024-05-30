@@ -10,8 +10,8 @@
         };
       };
       config = lib.mkIf cfg.enable {
-        geng.rust.targets = [ "wasm32-unknown-unknown" ];
-        devenv.shells.default.packages = with pkgs; [
+        geng.rust.targets = [ "x86_64-unknown-linux-gnu" ];
+        geng.packages = with pkgs; [
           libxkbcommon
           wayland
           xorg.libX11

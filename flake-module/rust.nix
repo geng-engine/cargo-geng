@@ -15,7 +15,7 @@
       };
       targets = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "rust-src" ];
+        default = [ ];
       };
       finalPackage = lib.mkOption {
         type = lib.types.package;
@@ -27,6 +27,7 @@
           extensions = config.geng.rust.extensions;
           targets = config.geng.rust.targets;
         };
+      geng.packages = [ config.geng.rust.finalPackage ];
     };
   };
 }

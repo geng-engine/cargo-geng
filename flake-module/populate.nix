@@ -10,7 +10,8 @@
     systems = inputs.nixpkgs.lib.systems.flakeExposed;
     perSystem = { lib, pkgs, config, ... }: {
       devenv.shells.default = {
-        packages = [ config.geng.rust.finalPackage ];
+        packages = config.geng.packages;
+        env = config.geng.env;
       };
       formatter = pkgs.nixpkgs-fmt;
     };

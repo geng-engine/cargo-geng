@@ -9,12 +9,29 @@
           type = lib.types.bool;
           default = false;
         };
+        cargo-apk = lib.mkOption {
+          type = lib.types.package;
+        };
         sdk = lib.mkOption {
           type = lib.types.package;
         };
       };
       config = lib.mkIf cfg.enable {
         geng.rust.targets = [ "aarch64-linux-android" ];
+        geng.android.cargo-apk = config.geng.lib.crane.buildPackage {
+          pname = "cargo-apk";
+          version = "0.9.7";
+          src = builtins.fetchGit {
+            url = "https://github.com/geng-engine/cargo-apk";
+            ref = "dev";
+            rev = "977278e9b298d6f99c03c3e3a8fac18cbbd42daa";
+          };
+          cargoExtraArgs = "--package cargo-apk";
+          cargoVendorDir = config.geng.lib.crane.vendorCargoDeps {
+            cargoLock = ./cargo-apk.Cargo.lock;
+            src = ./.;
+          };
+        };
         geng.android.sdk = (pkgs.androidenv.composeAndroidPackages {
           cmdLineToolsVersion = "8.0";
           toolsVersion = "26.1.1";
@@ -39,15 +56,14 @@
             # "extras;google;gcm"
           ];
         }).androidsdk;
-        devenv.shells.default = {
-          env = rec {
-            ANDROID_SDK_ROOT = "${config.geng.android.sdk}/libexec/android-sdk";
-            ANDROID_NDK_ROOT = "${ANDROID_SDK_ROOT}/ndk-bundle";
-          };
-          packages = [
-            config.geng.android.sdk
-          ];
+        geng.env = rec {
+          ANDROID_SDK_ROOT = "${config.geng.android.sdk}/libexec/android-sdk";
+          ANDROID_NDK_ROOT = "${ANDROID_SDK_ROOT}/ndk-bundle";
         };
+        geng.packages = [
+          config.geng.android.sdk
+          config.geng.android.cargo-apk
+        ];
       };
     };
 }

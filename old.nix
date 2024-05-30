@@ -4,17 +4,6 @@
       inherit (utils.lib) eachDefaultSystem;
       makeFlakeSystemOutputs = system: { src, extraBuildInputs ? [ ], rust ? { }, ... }@config:
         let
-          filter = nix-filter.lib;
-          overlays = [ (import rust-overlay) ];
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config = {
-              allowUnfree = true;
-              android_sdk.accept_license = true;
-            };
-          };
-          crane = (crane-flake.lib.${system}).overrideToolchain rust-toolchain;
-          libPath = pkgs.lib.makeLibraryPath libDeps;
           lib = rec {
             inherit crane;
             inherit filter;
@@ -101,44 +90,6 @@
                 ];
                 buildInputs = buildInputs ++ (args.buildInputs or [ ]);
               });
-            cargo-apk = crane.buildPackage {
-              pname = "cargo-apk";
-              version = "0.9.7";
-              src = builtins.fetchGit {
-                url = "https://github.com/geng-engine/cargo-apk";
-                allRefs = true;
-                rev = "3d64d642fc4adf68b8a828cc1c743303a360ae1d";
-              };
-              cargoExtraArgs = "--package cargo-apk";
-              cargoVendorDir = crane.vendorCargoDeps {
-                cargoLock = ./cargo-apk.Cargo.lock;
-              };
-            };
-            androidsdk = (pkgs.androidenv.composeAndroidPackages {
-              cmdLineToolsVersion = "8.0";
-              toolsVersion = "26.1.1";
-              platformToolsVersion = "34.0.1";
-              buildToolsVersions = [ "30.0.3" ];
-              includeEmulator = false;
-              emulatorVersion = "33.1.6";
-              platformVersions = [ "33" ];
-              includeSources = false;
-              includeSystemImages = false;
-              systemImageTypes = [ "google_apis_playstore" ];
-              abiVersions = [
-                "armeabi-v7a"
-                "arm64-v8a"
-              ];
-              cmakeVersions = [ "3.10.2" ];
-              includeNDK = true;
-              ndkVersions = [ "25.2.9519653" ];
-              useGoogleAPIs = false;
-              useGoogleTVAddOns = false;
-              includeExtras = [
-                # "extras;google;gcm"
-              ];
-            }).androidsdk;
-          };
         in
         rec {
           inherit lib;
