@@ -9,6 +9,7 @@
   config = lib.mkIf config.geng.populateFlake {
     systems = inputs.nixpkgs.lib.systems.flakeExposed;
     perSystem = { lib, pkgs, config, ... }: {
+      geng.rust.extensions = [ "rust-analyzer" ];
       devenv.shells.default = {
         packages = config.geng.packages;
         env = config.geng.env;

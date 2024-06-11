@@ -90,64 +90,66 @@
                 ];
                 buildInputs = buildInputs ++ (args.buildInputs or [ ]);
               });
-        in
-        rec {
-          inherit lib;
-          # Executed by `nix build .`
-          packages.default = lib.buildGengPackage { inherit src; };
-          # Executed by `nix build .#web"
-          packages.web = lib.buildGengPackage { inherit src; platform = "web"; };
-          # Executed by `nix build .#windows"
-          packages.windows = lib.buildGengPackage { inherit src; platform = "windows"; };
-          # Executed by `nix build .#android"
-          packages.android = lib.buildGengPackage { inherit src; platform = "android"; };
-          # Executed by `nix run . -- <args?>`
+            in
+            rec {
+            inherit lib;
+            # Executed by `nix build .`
+            packages.default = lib.buildGengPackage { inherit src; };
+            # Executed by `nix build .#web"
+            packages.web = lib.buildGengPackage { inherit src; platform = "web"; };
+            # Executed by `nix build .#windows"
+            packages.windows = lib.buildGengPackage { inherit src; platform = "windows"; };
+            # Executed by `nix build .#android"
+            packages.android = lib.buildGengPackage { inherit src; platform = "android"; };
+            # Executed by `nix run . -- <args?>`
+            apps.default =
+              {
+                type = "app";
+                program = "${packages.default}/${packages.default.pname}";
+              };
+            devShell = with pkgs; mkShell {
+              inherit nativeBuildInputs;
+              buildInputs = buildInputs ++ [
+                just
+                rust-toolchain
+                rust-analyzer
+                # wineWowPackages.waylandFull
+                # pkgsCross.mingwW64.windows.pthreads
+                lib.cargo-apk
+                lib.androidsdk
+                jre
+              ] ++ (if (config.cargo-geng or true) then [ lib.cargo-geng ] else [ ]);
+              shellHook =
+                let
+                  libPath = pkgs.lib.makeLibraryPath (libDeps ++ [ pkgsCross.mingwW64.windows.pthreads ]);
+                  androidSdkRoot = "${lib.androidsdk}/libexec/android-sdk";
+                  androidNdkRoot = "${androidSdkRoot}/ndk-bundle";
+                in
+                ''
+                  export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS="-C link-args=''$(echo $NIX_LDFLAGS | tr ' ' '\n' | grep -- '^-L' | tr '\n' ' ')"
+                  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${libPath}"
+                  export WINIT_UNIX_BACKEND=x11 # TODO fix
+                  export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
+                  export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER="wine64"
+                  export ANDROID_SDK_ROOT="${androidSdkRoot}";
+                  export ANDROID_NDK_ROOT="${androidNdkRoot}"; 
+                '';
+            };
+            formatter = pkgs.nixpkgs-fmt;
+          };
+          makeFlakeOutputs = f: utils.lib.eachDefaultSystem (system: self.makeFlakeSystemOutputs system (f system));
+          } // utils.lib.eachDefaultSystem (system:
+          with self.makeFlakeSystemOutputs system { src = ./.;
+          cargo-geng = false;
+          };
+          {
+          inherit formatter lib devShell;
+          packages.default = lib.cargo-geng;
           apps.default =
             {
               type = "app";
-              program = "${packages.default}/${packages.default.pname}";
+              program = "${lib.cargo-geng}/bin/${lib.cargo-geng.pname}";
             };
-          devShell = with pkgs; mkShell {
-            inherit nativeBuildInputs;
-            buildInputs = buildInputs ++ [
-              just
-              rust-toolchain
-              rust-analyzer
-              # wineWowPackages.waylandFull
-              # pkgsCross.mingwW64.windows.pthreads
-              lib.cargo-apk
-              lib.androidsdk
-              jre
-            ] ++ (if (config.cargo-geng or true) then [ lib.cargo-geng ] else [ ]);
-            shellHook =
-              let
-                libPath = pkgs.lib.makeLibraryPath (libDeps ++ [ pkgsCross.mingwW64.windows.pthreads ]);
-                androidSdkRoot = "${lib.androidsdk}/libexec/android-sdk";
-                androidNdkRoot = "${androidSdkRoot}/ndk-bundle";
-              in
-              ''
-                export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS="-C link-args=''$(echo $NIX_LDFLAGS | tr ' ' '\n' | grep -- '^-L' | tr '\n' ' ')"
-                export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${libPath}"
-                export WINIT_UNIX_BACKEND=x11 # TODO fix
-                export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
-                export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER="wine64"
-                export ANDROID_SDK_ROOT="${androidSdkRoot}";
-                export ANDROID_NDK_ROOT="${androidNdkRoot}"; 
-              '';
-          };
-          formatter = pkgs.nixpkgs-fmt;
-        };
-      makeFlakeOutputs = f: utils.lib.eachDefaultSystem (system: self.makeFlakeSystemOutputs system (f system));
-    } // utils.lib.eachDefaultSystem (system:
-      with self.makeFlakeSystemOutputs system { src = ./.; cargo-geng = false; };
-      {
-        inherit formatter lib devShell;
-        packages.default = lib.cargo-geng;
-        apps.default =
-          {
-            type = "app";
-            program = "${lib.cargo-geng}/bin/${lib.cargo-geng.pname}";
-          };
-      }
-    );
-}
+          }
+          );
+          }
