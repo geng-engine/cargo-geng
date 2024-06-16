@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{ lib, config, cargo-geng, ... }: {
   imports = [
     ./rust.nix
     ./linux.nix
@@ -7,6 +7,10 @@
     ./windows.nix
   ];
   options = {
+    cargo-geng.package = lib.mkOption {
+      type = lib.types.nullOr lib.types.package;
+      default = cargo-geng;
+    };
     packages = lib.mkOption {
       # TODO buildInputs/nativeBuildInputs?
       type = lib.types.listOf lib.types.package;
@@ -26,5 +30,8 @@
       description = "Environment variables";
       default = { };
     };
+  };
+  config = {
+    packages = lib.mkIf (!builtins.isNull config.cargo-geng.package) [ config.cargo-geng.package ];
   };
 }

@@ -38,8 +38,11 @@
             crane = crane-flake.mkLib pkgs;
           in
           (pkgs.lib.evalModules {
-            modules = [ ./flake-module configModule ] ++ configExtraModules;
-            specialArgs = { inherit pkgs crane; };
+            modules = [
+              ./flake-module
+              configModule
+            ] ++ configExtraModules;
+            specialArgs = { inherit pkgs crane; cargo-geng = self.packages.${system}.default; };
           }).config;
         mkShell = config@{ system, ... }:
           let
@@ -147,6 +150,7 @@
       devShells = forEachSystem (system: pkgs: {
         default = self.lib.mkShell {
           inherit system;
+          cargo-geng.package = null;
           target.linux.enable = false; # we only develop cargo-geng itself, not games with geng
         };
         full = self.lib.mkShell {
