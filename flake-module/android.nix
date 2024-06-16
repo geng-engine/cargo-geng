@@ -59,6 +59,7 @@ in
       ANDROID_NDK_ROOT = "${ANDROID_SDK_ROOT}/ndk-bundle";
     };
     packages = [
+      pkgs.jdk # for apksigner?
       cfg.sdk
       cfg.cargo-apk
     ];
