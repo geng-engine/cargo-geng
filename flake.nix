@@ -52,7 +52,7 @@
             env = self.lib.mkEnv finalConfig;
           in
           pkgs.mkShell
-            {
+            ({
               packages = env.packages;
               shellHook =
                 let
@@ -61,7 +61,7 @@
                 ''
                   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${libPath}"
                 '';
-            } // env.env;
+            } // env.env);
 
         buildGengPackage =
           origArgs@{ system, platform ? "linux", package ? null, envConfig ? { }, ... }:
