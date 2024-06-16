@@ -11,7 +11,7 @@
     android.url = "github:tadfisher/android-nixpkgs"; # TODO: unused?
   };
 
-  outputs = { self, nixpkgs, systems, rust-overlay, crane-flake, ... }:
+  outputs = { self, nixpkgs, systems, rust-overlay, crane-flake, nix-filter, ... }:
     let
       pkgsFor = system: import nixpkgs {
         inherit system;
@@ -27,6 +27,7 @@
     in
     {
       lib = {
+        filter = nix-filter.lib;
         mkEnv = config@{ system, ... }:
           let
             pkgs = pkgsFor system;
@@ -58,10 +59,91 @@
                   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${libPath}"
                 '';
             } // env.env;
+
+        buildGengPackage =
+          origArgs@{ system, platform ? "linux", package ? null, envConfig ? { }, ... }:
+          let
+            pkgs = pkgsFor system;
+            crane = crane-flake.mkLib pkgs;
+            env = self.lib.mkEnv {
+              inherit system;
+              modules = [
+                {
+                  target.${platform}.enable = true;
+                  packages = [ self.packages.${system}.default ];
+                }
+                envConfig
+              ];
+            };
+            cleanedArgs = builtins.removeAttrs origArgs [
+              "system"
+              "package"
+              "platform"
+              "envConfig"
+            ];
+            crateName = crane.crateNameFromCargoToml cleanedArgs;
+            # Avoid recomputing values when passing args down
+            args = cleanedArgs // {
+              pname = cleanedArgs.pname or crateName.pname;
+              version = cleanedArgs.version or crateName.version;
+              cargoVendorDir = cleanedArgs.cargoVendorDir or (crane.vendorCargoDeps cleanedArgs);
+              CARGO_BUILD_TARGET =
+                if platform == "web" then "wasm32-unknown-unknown"
+                else if platform == "android" then "aarch64-linux-android"
+                else if platform == "windows" then "x86_64-pc-windows-gnu"
+                else if platform == "linux" then "x86_64-unknown-linux-gnu"
+                else throw "unknown platform ${platform}";
+              buildInputs = cleanedArgs.buildInputs or [ ] ++ env.packages;
+              dontWrapQtApps = true; # No idea where this shit is documented
+            } // env.env;
+          in
+          crane.mkCargoDerivation (args // {
+            # pnameSuffix = "-trunk";
+            cargoArtifacts = args.cargoArtifacts or (crane.buildDepsOnly (args // {
+              installCargoArtifactsMode = args.installCargoArtifactsMode or "use-zstd";
+              doCheck = args.doCheck or false;
+            }));
+            buildPhaseCargoCommand = args.buildPhaseCommand or (
+              let
+                packageArg = if builtins.isNull package then "" else "--package=${package}";
+                platformArg = "--platform=${platform}";
+              in
+              ''
+                local args=${platformArg}${packageArg}
+                if [[ "$CARGO_PROFILE" == "release" ]]; then
+                  args="$args --release"
+                fi
+                cargo geng build $args
+              ''
+            );
+            installPhaseCommand = args.installPhaseCommand or ''
+              cp -r target/geng $out
+            '';
+            # Installing artifacts on a distributable dir does not make much sense
+            doInstallCargoArtifacts = args.doInstallCargoArtifacts or false;
+          });
       };
-      packages = forEachSystem (system: pkgs: {
-        # TODO default = cargo-geng package
-      });
+      packages = forEachSystem (system: pkgs:
+        let
+          src = self.lib.filter {
+            root = ./.;
+            include = [
+              "Cargo.toml"
+              "Cargo.lock"
+              "src"
+            ];
+          };
+        in
+        {
+          default = (crane-flake.mkLib pkgs).buildPackage {
+            inherit src;
+          };
+          buildSelf = self.lib.buildGengPackage {
+            inherit system;
+            inherit src;
+          };
+          # TODO default = cargo-geng package
+        });
       devShells = forEachSystem (system: pkgs: {
         default = self.lib.mkShell {
           inherit system;
