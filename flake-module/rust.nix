@@ -1,33 +1,40 @@
-{ inputs, ... }: {
-  perSystem = { pkgs, lib, config, system, ... }: {
-    options.geng.rust = {
-      toolchain-kind = lib.mkOption {
-        type = lib.types.enum [ "stable" "nightly" ];
-        default = "stable";
-      };
-      version = lib.mkOption {
-        type = lib.types.str;
-        default = "latest";
-      };
-      extensions = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ "rust-src" ];
-      };
-      targets = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-      };
-      finalPackage = lib.mkOption {
-        type = lib.types.package;
-      };
+{ pkgs, lib, config, ... }: {
+  options.rust = {
+    dev = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
     };
-    config = {
-      geng.rust.finalPackage = pkgs.rust-bin.${config.geng.rust.toolchain-kind}.${config.geng.rust.version}.default.override
-        {
-          extensions = config.geng.rust.extensions;
-          targets = config.geng.rust.targets;
-        };
-      geng.packages = [ config.geng.rust.finalPackage ];
+    toolchain-kind = lib.mkOption {
+      type = lib.types.enum [ "stable" "nightly" ];
+      default = "stable";
+    };
+    version = lib.mkOption {
+      type = lib.types.str;
+      default = "latest";
+    };
+    extensions = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+    };
+    targets = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+    };
+    finalPackage = lib.mkOption {
+      type = lib.types.package;
     };
   };
+  config = {
+    rust.extensions = lib.mkIf config.rust.dev [
+      "rust-src"
+      "rust-analyzer"
+    ];
+    rust.finalPackage = pkgs.rust-bin.${config.rust.toolchain-kind}.${config.rust.version}.default.override
+      {
+        extensions = config.rust.extensions;
+        targets = config.rust.targets;
+      };
+    packages = [ config.rust.finalPackage ];
+  };
 }
+
