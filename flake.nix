@@ -50,6 +50,13 @@
           pkgs.mkShell
             {
               packages = env.packages;
+              shellHook =
+                let
+                  libPath = pkgs.lib.makeLibraryPath env.packages;
+                in
+                ''
+                  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${libPath}"
+                '';
             } // env.env;
       };
       packages = forEachSystem (system: pkgs: {
