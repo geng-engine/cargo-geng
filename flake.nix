@@ -58,6 +58,10 @@
       devShells = forEachSystem (system: pkgs: {
         default = self.lib.mkShell {
           inherit system;
+          target.linux.enable = false; # we only develop cargo-geng itself, not games with geng
+        };
+        full = self.lib.mkShell {
+          inherit system;
           target.linux.enable = true;
           target.web.enable = true;
           target.android.enable = true;
