@@ -18,6 +18,7 @@ function setup() {
     install ca-certificates # Dont want no certificate errors
     install curl # Need to install rust
     install build-essential # This is essential
+    install git
 
     curl https://sh.rustup.rs -sSf | sh -s - -y --no-modify-path --profile minimal
 
