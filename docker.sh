@@ -19,6 +19,7 @@ function setup() {
     install curl # Need to install rust
     install build-essential # This is essential
     install git ssh
+    install zip
 
     curl https://sh.rustup.rs -sSf | sh -s - -y --no-modify-path --profile minimal
 
