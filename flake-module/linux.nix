@@ -22,7 +22,7 @@ in
       xorg.libXi
       xorg.libXrandr
       xorg.libxcb
-      kdialog # for tinyfiledialogs
+      kdePackages.kdialog # for tinyfiledialogs
       openssl
       alsa-lib
       udev
