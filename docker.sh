@@ -33,7 +33,7 @@ function setup() {
     windows)
         install mingw-w64
         rustup target add x86_64-pc-windows-gnu
-        printf "[target.x86_64-pc-windows-gnu]\nlinker = \"x86_64-w64-mingw32-gcc\"\n" >> $CARGO_HOME/config
+        printf "[target.x86_64-pc-windows-gnu]\nlinker = \"x86_64-w64-mingw32-gcc\"\n" >> $CARGO_HOME/config.toml
         ;;
     android)
         rustup target add aarch64-linux-android
@@ -43,7 +43,7 @@ function setup() {
         install gcc-arm-linux-gnueabihf
         install libc6-dev-armhf-cross
         rustup target add armv7-unknown-linux-gnueabihf
-        printf "[target.armv7-unknown-linux-gnueabihf]\nlinker = \"arm-linux-gnueabihf-gcc\"\n" >> $CARGO_HOME/config
+        printf "[target.armv7-unknown-linux-gnueabihf]\nlinker = \"arm-linux-gnueabihf-gcc\"\n" >> $CARGO_HOME/config.toml
         ;;
     web)
         rustup target add wasm32-unknown-unknown
