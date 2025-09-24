@@ -9,7 +9,7 @@ RUN ["/bin/bash", "/docker.sh", "setup"]
 
 FROM base AS intermediate
 COPY . /src
-RUN cargo install --all-features --path /src
+RUN cargo install --locked --all-features --path /src
 
 FROM base AS final
 COPY --from=intermediate /usr/local/cargo/bin/cargo-geng /usr/local/cargo/bin/cargo-geng
