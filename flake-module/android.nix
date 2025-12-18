@@ -33,7 +33,7 @@ in
     target.android.sdk = (pkgs.androidenv.composeAndroidPackages {
       cmdLineToolsVersion = "8.0";
       toolsVersion = "26.1.1";
-      platformToolsVersion = "34.0.1";
+      platformToolsVersion = "36.0.2";
       buildToolsVersions = [ "30.0.3" ];
       includeEmulator = false;
       emulatorVersion = "33.1.6";

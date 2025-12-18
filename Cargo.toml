@@ -13,7 +13,7 @@ version = "0.16.0"
 
 [features]
 default = []
-wast-opt = ["dep:wasm-opt"]
+wasm-opt = ["dep:wasm-opt"]
 
 [dependencies]
 open = "5"
