@@ -66,6 +66,7 @@ fn package_metadata(package: &cargo_metadata::Package) -> anyhow::Result<Option<
 }
 
 pub fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let args = args::parse();
     let metadata = cargo_metadata::MetadataCommand::new().exec()?;
     let package = metadata
