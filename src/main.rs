@@ -126,6 +126,7 @@ pub fn main() -> anyhow::Result<()> {
         }
         paths
     };
+    log::info!("assets: {assets:?}");
 
     let out_dir = args
         .out_dir
