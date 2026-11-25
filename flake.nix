@@ -140,7 +140,7 @@
         {
           default = (crane-flake.mkLib pkgs).buildPackage {
             inherit src;
-            buildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
+            buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.libiconv ];
           };
           buildSelf = self.lib.buildGengPackage {
             inherit system;
